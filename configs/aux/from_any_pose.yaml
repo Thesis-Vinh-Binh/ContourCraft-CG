@@ -32,6 +32,16 @@ runner:
       bending_coeff_max: 0.0013139737991266374
       density_min: 4.34e-2
       density_max: 7e-1
+    material2:
+      use_meterial2: False
+      lame_mu_min: 15909
+      lame_mu_max: 63636
+      lame_lambda_min: 3535.414406069427
+      lame_lambda_max: 93333.73508005822
+      bending_coeff_min: 6.370782056371576e-08
+      bending_coeff_max: 0.0013139737991266374
+      density_min: 4.34e-2
+      density_max: 7e-1
     safecheck:
       max_riz_size: 30
       n_rest2pos_steps: 10
@@ -46,10 +56,8 @@ dataloader:
   dataset:
     from_any_pose:
       smpl_model: 'body_models/smpl/SMPL_FEMALE.pkl'
-      pose_sequence_type: "smpl"
-      pose_sequence_path: 'fromanypose/pose_sequence.pkl'
-      # pose_sequence_type: "mesh"
-      # pose_sequence_path: 'fromanypose/mesh_sequence.pkl'
+      pose_sequence_type: "mesh"
+      pose_sequence_path: 'fromanypose/mesh_sequence.pkl'
       garment_template_path: 'fromanypose/tshirt.pkl'
       n_coarse_levels: 4
 

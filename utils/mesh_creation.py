@@ -13,6 +13,7 @@ from utils.io import load_obj, pickle_dump, pickle_load
 from utils.coarse import make_graph_from_faces, make_coarse_edges
 from utils.common import NodeType
 from utils.defaults import DEFAULTS
+import json
 
 
 def add_pinned_verts(file, garment_name, pinned_indices):
@@ -43,6 +44,7 @@ def add_pinned_verts_single_template(file, pinned_indices):
     with open(file, 'rb') as f:
         pkl = pickle.load(f)
     node_type = np.zeros_like(pkl['rest_pos'][:, :1])
+    print('node_type', node_type.shape)
     node_type[pinned_indices] = NodeType.HANDLE
     node_type = node_type.astype(np.int64)
     pkl['node_type'] = node_type
@@ -88,9 +90,33 @@ def sample_skinningweights(points, smpl_tree, sigmas, smpl_model):
 
     return garment_shapedirs, garment_posedirs, garment_lbs_weights
 
+
+def approximate_graph_center(G):
+    """
+    Approximates the center of a graph using the two-sweep BFS algorithm.
+    Returns:
+    center_vertex: The approximate center vertex of the graph.
+    """
+    # First BFS from an arbitrary vertex
+    start_vertex = list(G.nodes())[0]
+    lengths = nx.single_source_shortest_path_length(G, start_vertex)
+    u = max(lengths, key=lengths.get)
+    # Second BFS from vertex u
+    lengths = nx.single_source_shortest_path_length(G, u)
+    w = max(lengths, key=lengths.get)
+    # Get the shortest path from u to w
+    path = nx.shortest_path(G, source=u, target=w)
+    # Find the middle vertex (or vertices) of the path
+    path_length = len(path)
+    center_index = path_length // 2
+    center_vertex = path[center_index]
+    return center_vertex
+
+
 class GarmentCreator:
     def __init__(self, garments_dict_path, body_models_root, model_type, gender, 
-                 collect_lbs=True, n_samples_lbs=0, coarse=True, n_coarse_levels=4, verbose=False):
+                 collect_lbs=True, n_samples_lbs=0, coarse=True, n_coarse_levels=4, 
+                 approximate_center=False, verbose=False):
         self.garments_dict_path = garments_dict_path
         self.body_models_root = body_models_root
         self.model_type = model_type
@@ -102,6 +128,7 @@ class GarmentCreator:
         self.coarse = coarse
         self.n_coarse_levels = n_coarse_levels
         self.verbose = verbose
+        self.approximate_center = approximate_center
 
         if body_models_root is not None:
             self.body_model = smplx.create(body_models_root, model_type, gender=gender)
@@ -137,7 +164,11 @@ class GarmentCreator:
 
             faces_component = faces[faces_mask]
 
-            center_nodes = nx.center(cG)
+            # center_nodes = nx.center(cG)
+            if self.approximate_center:
+                center_nodes = [approximate_graph_center(cG)]
+            else:
+                center_nodes = nx.center(cG)
 
             cg_dict['center'] = center_nodes
             cg_dict['coarse_edges'] = dict()
@@ -227,12 +258,20 @@ class GarmentCreator:
         """
         Create a dictionary for a garment from an obj file
         """
-        vertices_full, faces_full = load_obj(obj_file, tex_coords=False)
-        outer_trimesh = trimesh.Trimesh(vertices=vertices_full,
-                                        faces=faces_full, process=True)
+        # vertices_full, faces_full = load_obj(obj_file, tex_coords=False)
+        if obj_file.endswith('.obj'):
+            vertices_full, faces_full = load_obj(obj_file, tex_coords=False)
+            outer_trimesh = trimesh.Trimesh(vertices=vertices_full,
+                                        faces=faces_full, process=True, maintain_order=True)
 
-        vertices_full = outer_trimesh.vertices
-        faces_full = outer_trimesh.faces
+            vertices_full = outer_trimesh.vertices
+            faces_full = outer_trimesh.faces
+        else:
+            assert obj_file.endswith('.json')
+            with open(obj_file, 'r') as f:
+                obj_dict = json.load(f)
+            vertices_full = np.array(obj_dict['verts']).astype(np.float64)
+            faces_full = np.array(obj_dict['faces']).astype(np.int64)
 
         garment_dict = make_restpos_dict(vertices_full, faces_full)
 
@@ -296,9 +335,9 @@ def make_restpos_dict(vertices_full, faces_full):
     return restpos_dict
 
 
-def obj2template(obj_path, verbose=False):
+def obj2template(obj_path, verbose=False, approximate_center=False):
 
-    gc = GarmentCreator(None, None, None, None, collect_lbs=False, coarse=True, verbose=verbose)    
+    gc = GarmentCreator(None, None, None, None, collect_lbs=False, coarse=True, verbose=verbose, approximate_center=approximate_center)    
     out_dict = gc.make_garment_dict(obj_path)
 
     return out_dict

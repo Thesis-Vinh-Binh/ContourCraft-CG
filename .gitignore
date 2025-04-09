@@ -164,3 +164,8 @@ Debug.ipynb
 *_local.ipynb
 *_bu.ipynb
 
+exp/
+
+tmp*
+assets/
+

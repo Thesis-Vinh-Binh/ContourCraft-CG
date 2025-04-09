@@ -133,6 +133,8 @@ class Model(nn.Module):
 
         indices_from, indices_to, _, _ = get_closest_nodes_and_faces_pt_dummmy(vertices_cloth, vertices_obstacle, obstacle_faces, self.mcfg.body_collision_radius)
 
+        # print('indices_to', indices_to)
+        indices_to = indices_to.long()
 
         indices_to_vertex_type = obstacle_vertex_type[indices_to][..., 0]
         vertex_type_mask = indices_to_vertex_type != NodeType.OBSTACLE_OMIT
@@ -251,6 +253,9 @@ class Model(nn.Module):
         nodes_from_all = torch.cat([nodes_from, nodes_from_fpin], dim=0)
         faces_to_all = torch.cat([faces_to, faces_to_fpin], dim=0)
 
+        nodes_from_all = nodes_from_all.long()
+        faces_to_all = faces_to_all.long()
+
         enclosed_nodes_mask = None
         nodes_enclosed_or_nenc_mask = None
         if "enclosed_nodes_mask" in example['cloth']:
@@ -289,6 +294,7 @@ class Model(nn.Module):
             faces_to_all = faces_to_all[mask]
             mask_is_contour = mask_is_contour[mask]
 
+        # print('nodes_from_all', nodes_from_all)
         node2face, n2f_distance, repulsion_sign = self.make_face2node(example, nodes_from_all, faces_to_all, mask_is_contour, nodes_enclosed_or_nenc_mask)
         repulsion_sign = repulsion_sign[:, 0]
 
@@ -579,19 +585,47 @@ class Model(nn.Module):
             velocity = sample[k].velocity
             device = velocity.device
             if k == 'obstacle':
-                for m in ['lame_mu_input', 'lame_lambda_input', 'bending_coeff_input']:
+                if 'lame_mu_input2' not in sample['cloth']:
+                    m_list = ['lame_mu_input', 'lame_lambda_input', 'bending_coeff_input']
+                else:
+                    m_list = ['lame_mu_input', 'lame_lambda_input', 'bending_coeff_input',
+                              'lame_mu_input2', 'lame_lambda_input2', 'bending_coeff_input2']
+                    
+                for m in m_list:
                     mvec = torch.ones_like(velocity[:, :1]).to(device) * -1
                     sample = add_field_to_pyg_batch(sample, m, mvec, k, 'pos')
             else:
                 slice = sample._slice_dict[k]['pos']
                 lens = slice[1:] - slice[:-1]
-                for m in ['lame_mu_input', 'lame_lambda_input', 'bending_coeff_input']:
-                    mvec = sample['cloth'][m]
-                    if mvec.shape[0] == 1:
-                        mvec = make_pervertex_tensor_from_lens(lens, mvec)
-                    else:
-                        mvec = mvec[:, None]
-                    sample = add_field_to_pyg_batch(sample, m, mvec, k, 'pos')
+                if 'lame_mu_input2' not in sample['cloth']:
+                    for m in ['lame_mu_input', 'lame_lambda_input', 'bending_coeff_input']:
+                        mvec = sample['cloth'][m]
+                        # print('m', m, mvec.shape, lens)
+                        if mvec.shape[0] == 1:
+                            mvec = make_pervertex_tensor_from_lens(lens, mvec)
+                        else:
+                            mvec = mvec[:, None]
+                        # print('mvec new', mvec.shape)
+                        sample = add_field_to_pyg_batch(sample, m, mvec, k, 'pos')
+                
+                else:
+                    for m in ['lame_mu_input', 'lame_lambda_input', 'bending_coeff_input']:
+                        mvec = sample['cloth'][m]
+                        mvec2 = sample['cloth'][m + '2']
+                        assert mvec.shape[0] == 1
+
+                        ################ only supports batchsize == 1
+                        start_vertex = sample['cloth']['start_vertex_indices']
+                        start_vertex = int(start_vertex[0].item())
+                    
+                        val_list = []
+                        for i, n in enumerate(lens):
+                            val_list.append(mvec[i].repeat(n).unsqueeze(-1))
+                        mvec = torch.cat(val_list)
+                        # print('start_vertex', start_vertex, mvec.shape, mvec2.shape)
+                        mvec[start_vertex:] = mvec2
+
+                        sample = add_field_to_pyg_batch(sample, m, mvec, k, 'pos')
 
         return sample
 

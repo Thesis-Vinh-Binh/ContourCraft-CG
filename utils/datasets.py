@@ -38,7 +38,7 @@ def make_garment_smpl_dict(garments_dict: Dict[str, dict], smpl_model: SMPL) -> 
     return garment_smpl_model_dict
 
 
-def make_fromanypose_dataloader(pose_sequence_type, pose_sequence_path, garment_template_path, smpl_model=None):
+def make_fromanypose_dataloader(pose_sequence_type, pose_sequence_path, garment_template_path, smpl_model=None, **kwargs):
     from datasets.from_any_pose import Config as DatasetConfig
     from datasets.from_any_pose import create as create_dataset
     from utils.dataloader import DataloaderModule
@@ -46,11 +46,10 @@ def make_fromanypose_dataloader(pose_sequence_type, pose_sequence_path, garment_
 
     config = DatasetConfig(pose_sequence_type=pose_sequence_type, 
                         pose_sequence_path=pose_sequence_path, 
-                        garment_template_path=garment_template_path, 
-                        smpl_model=smpl_model)
+                        garment_template_path=garment_template_path)
 
 
-    dataset = create_dataset(config)
+    dataset = create_dataset(config, **kwargs)
     dataloader_config = DataloaderConfig(num_workers=0)
     dataloader = DataloaderModule(dataset, dataloader_config).create_dataloader()
     return dataloader

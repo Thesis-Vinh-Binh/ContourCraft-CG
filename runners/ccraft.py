@@ -128,6 +128,16 @@ class Runner(nn.Module):
         self.short_steps = 0
         self.long_steps = 0
 
+        # print('mcfg', mcfg)
+        if ('material2' in mcfg) and mcfg.material2.use_meterial2:
+            print('yes!!!!!!!!!')
+            material2 = mcfg.material2
+            self.random_material2 = RandomMaterial(material2)
+        else:
+            self.random_material2 = None
+        
+        print('self.random_material2', self.random_material2)
+
     def valid_rollout(self, sequence, n_steps=-1, bare=False, record_time=False, safecheck=True):
 
         record_time = True
@@ -195,6 +205,22 @@ class Runner(nn.Module):
                 trajectories_dicts[s] = torch.stack(trajectories_dicts[s], dim=0).cpu().numpy()
         return trajectories_dicts
 
+    def load_nocol_clo(self, sample):
+        B = sample.num_graphs
+        new_example_list = []
+        for i in range(B):
+            example = sample.get_example(i)
+
+            assert example['cloth'].pos.shape == example['cloth'].pos_nocol[:, 0].shape, (example['cloth'].pos.shape, example['cloth'].pos_nocol.shape)
+            assert example['cloth'].prev_pos.shape == example['cloth'].prev_pos_nocol[:, 0].shape, (example['cloth'].prev_pos.shape, example['cloth'].prev_pos_nocol.shape)
+        
+            example['cloth'].pos = example['cloth'].pos_nocol[:, 0]
+            example['cloth'].prev_pos = example['cloth'].prev_pos_nocol[:, 0]
+            new_example_list.append(example)
+
+        sample = Batch.from_data_list(new_example_list)
+        return sample
+    
     def _rollout(self, sample, start_idx, n_steps, progressbar=False, bare=False, safecheck=True):
         trajectories = defaultdict(list)
         is_obstacle = 'obstacle' in sample.node_types
@@ -223,7 +249,8 @@ class Runner(nn.Module):
                 # print('NOSOLVE')
 
                 # print('SOLVE')
-                # sample_step = self.collision_solver.solve(sample_step)
+                # sample_step = self.load_nocol_clo(sample_step)
+                sample_step = self.collision_solver.solve(sample_step)
                 sample_step, sample = self.update_sample_1st_step(sample_step, sample)
 
             if i == 0:
@@ -248,7 +275,7 @@ class Runner(nn.Module):
 
             ncoll = self.safecheck_solver.calc_tritri_collisions2(sample_step, verts_key='pred_pos')
             metrics_dict['ncoll'].append(ncoll)
-            # print('ncoll', ncoll)
+            print('ncoll', ncoll)
 
             prev_out_sample = sample_step.detach()
 
@@ -269,6 +296,10 @@ class Runner(nn.Module):
 
     def set_random_material(self, sample):
         sample, self.cloth_obj = self.random_material.add_material(sample, self.cloth_obj)
+        if self.random_material2 is not None:
+            sample, material2_dict = self.random_material2.add_material2(sample)
+            self.cloth_obj.update_material2(material2_dict)
+        
         return sample
 
     def _add_cloth_obj(self, sample):

@@ -138,16 +138,34 @@ class Cloth:
 class ClothMatAug(Cloth):
     def __init__(self, material, always_overwrite_mass=False):
         super().__init__(material, True)
-        self.always_overwrite_mass = always_overwrite_mass
+        self.always_overwrite_mass = always_overwrite_mass ################################################
+        self.always_overwrite_mass = False
+        # print('self.always_overwrite_mass', self.always_overwrite_mass) True
+        # assert False
+        self.material2_dict = None
 
     def set_material(self, material):
         self.material = material
 
     def make_v_mass(self, v, f, density, device):
+        if self.material2_dict is not None:
+            density2 = self.material2_dict['density']
+            density_new = torch.zeros_like(f[:, 0])
+            density_new[:] = density
+            density_new[self.material2_dict['start_face_indices']:] = density2
+
+            density = density_new
 
         v_mass = get_vertex_mass(v, f, density).to(device)
         v_mass = v_mass.unsqueeze(-1)
         return v_mass
+
+    def update_material2(self, material_dict):
+        # for k, v in material_dict.items():
+        #     setattr(self.material, k, v)
+        self.material.density2 = material_dict['density']
+        self.material.start_face_indices = material_dict['start_face_indices']
+        self.material2_dict = material_dict
 
     def set_batch(self, batch, overwrite_pos=False):
 
@@ -203,6 +221,79 @@ class ClothMatAug(Cloth):
 
         batch = Batch.from_data_list(new_examples_list)
         return batch
+
+    # def set_batch_fromplane(self, batch, overwrite_pos=False):
+    def set_batch_plane(self, batch, overwrite_pos=False):
+        overwrite_pos = False
+        B = batch.num_graphs
+        device = batch['cloth'].pos.device
+
+        new_examples_list = []
+        for i in range(B):
+            example = batch.get_example(i)
+            garment_name = example.garment_name
+
+            v = example['cloth'].rest_pos
+            f = example['cloth'].faces_batch.T
+            v_plane = example['cloth'].rest_pos_nocol
+            # assert v_plane.shape[0] == v.shape[0]
+            print('v', v.shape, 'f', f.shape, 'v_plane', v_plane.shape)
+
+            verts_mask = example['cloth'].stitch_verts_mask
+            faces_mask = verts_mask[example['cloth'].faces_batch.reshape(-1, 3)].sum(dim=1) > 0
+            print(verts_mask.shape, faces_mask.shape)
+
+            density = self.material.density[i].item()
+
+            if garment_name in self.cache:
+                f_connectivity = self.cache[garment_name]['f_connectivity']
+                f_connectivity_edges = self.cache[garment_name]['f_connectivity_edges']
+                v_mass = self.cache[garment_name]['v_mass']
+                f_area = self.cache[garment_name]['f_area']
+                Dm_inv = self.cache[garment_name]['Dm_inv']
+                
+            else:
+                v_mass = self.make_v_mass(v, f, density, device)
+                f_area = self.make_f_area(v, f, device)
+                f_connectivity, f_connectivity_edges = self.make_connectivity(f)
+                Dm_inv = self.make_Dm_inv(v, f)
+
+                v_mass2 = self.make_v_mass(v_plane, f, density, device)
+                f_area2 = self.make_f_area(v_plane, f, device)
+                Dm_inv2 = self.make_Dm_inv(v_plane, f)
+
+                print('v_plane', v_plane.max(), v_plane.min(), v.max(), v.min())
+                print('v_mass2', v_mass2.mean(), v_mass.mean())
+                # assert False
+
+                # print('v_mass', v_mass.shape, 'f_area2', f_area2.shape, 'Dm_inv2', Dm_inv2.shape)
+                verts_mask = verts_mask.reshape(v_mass.shape).float()
+                faces_mask = faces_mask.reshape(f_area.shape).float()
+                v_mass = v_mass * verts_mask + v_mass2 * (1 - verts_mask)
+                f_area = f_area * faces_mask + f_area2 * (1 - faces_mask)
+
+                faces_mask = faces_mask.unsqueeze(-1)
+                Dm_inv = Dm_inv * faces_mask + Dm_inv2 * (1 - faces_mask)
+
+                self.cache[garment_name]['v_mass'] = v_mass
+                self.cache[garment_name]['f_area'] = f_area
+                self.cache[garment_name]['f_connectivity'] = f_connectivity
+                self.cache[garment_name]['f_connectivity_edges'] = f_connectivity_edges
+                self.cache[garment_name]['Dm_inv'] = Dm_inv
+
+                # assert False
+
+            example['cloth'].v_mass = v_mass
+            example['cloth'].f_area = f_area
+            example['cloth'].f_connectivity = f_connectivity
+            example['cloth'].f_connectivity_edges = f_connectivity_edges
+            example['cloth'].Dm_inv = Dm_inv
+
+            new_examples_list.append(example)
+
+        batch = Batch.from_data_list(new_examples_list)
+        return batch
+
 
 
 class Material():
@@ -425,6 +516,33 @@ def get_face_connectivity_combined(faces):
     return adjacent_faces, adjacent_face_edges
 
 
+
+def get_single_face_edges(faces):
+
+    if type(faces) == torch.Tensor:
+        faces = faces.detach().cpu().numpy().reshape(-1, 3)
+
+    edges = get_vertex_connectivity(faces).cpu().numpy()
+
+    G = {tuple(e): [] for e in edges}
+    for i, f in enumerate(faces):
+        n = len(f)
+        for j in range(n):
+            k = (j + 1) % n
+            e = tuple(sorted([f[j], f[k]]))
+            G[e] += [i]
+    
+    single_face_edges = []
+    for key in G:
+        if len(G[key]) == 1:
+            single_face_edges.append(list(key))
+
+    single_face_edge_vs = [item for subitem in single_face_edges for item in subitem]
+    single_face_edge_vs = list(set(single_face_edge_vs))
+
+    return single_face_edges, single_face_edge_vs
+
+
 def get_vertex_mass(vertices, faces, density):
     '''
     Computes the mass of each vertex according to triangle areas and fabric density
@@ -434,6 +552,9 @@ def get_vertex_mass(vertices, faces, density):
     faces = faces.cpu()
 
     areas = get_face_areas(vertices, faces)
+    # areas (38193,) torch.Size([38193, 3]) torch.Size([19323, 3])
+    # mvec new torch.Size([19323, 1])
+    # print('areas', areas.shape, faces.shape, vertices.shape)
     triangle_masses = density * areas
 
     vertex_masses = np.zeros(vertices.shape[0])

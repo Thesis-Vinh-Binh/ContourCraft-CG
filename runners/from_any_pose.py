@@ -83,6 +83,15 @@ class Runner(nn.Module):
         self.sample_collector = SampleCollector(mcfg, no_target=True)
         self.collision_solver = CollisionPreprocessor(mcfg)
         self.random_material = RandomMaterial(mcfg.material)
+        print('mcfg', mcfg)
+        if ('material2' in mcfg) and mcfg.material2.use_meterial2:
+            print('yes!!!!!!!!!')
+            material2 = mcfg.material2
+            self.random_material2 = RandomMaterial(material2)
+        else:
+            self.random_material2 = None
+        
+        print('self.random_material2', self.random_material2)
 
     def valid_rollout(self, sequence, n_steps=-1, bare=False, record_time=False):
         """
@@ -201,6 +210,10 @@ class Runner(nn.Module):
         :return:
         """
         sample, self.cloth_obj = self.random_material.add_material(sample, self.cloth_obj)
+        if self.random_material2 is not None:
+            sample, material2_dict = self.random_material2.add_material2(sample, self.cloth_obj)
+            self.cloth_obj.update_material2(material2_dict)
+
         return sample
 
     def add_cloth_obj(self, sample):

@@ -51,7 +51,7 @@ def make_obstacle_dict(mcfg: Config) -> dict:
     return obstacle_dict
 
 
-def create_loader(mcfg: Config):
+def create_loader(mcfg: Config, **kwargs):
 
     garment_template_path = os.path.join(DEFAULTS.data_root, mcfg.garment_template_path)
 
@@ -76,12 +76,12 @@ def create_loader(mcfg: Config):
         raise ValueError(f'Unknown pose sequence type: {mcfg.pose_sequence_type}, has to be "mesh" or "body_model"')
 
     obstacle_dict = make_obstacle_dict(mcfg)
-    loader = Loader(mcfg, garment_dict, obstacle_dict, body_model)
+    loader = Loader(mcfg, garment_dict, obstacle_dict, body_model, **kwargs)
     return loader
 
 
-def create(mcfg: Config):
-    loader = create_loader(mcfg)
+def create(mcfg: Config, **kwargs):
+    loader = create_loader(mcfg, **kwargs)
 
     pose_sequence_path = os.path.join(DEFAULTS.data_root, mcfg.pose_sequence_path)
     dataset = Dataset(loader, pose_sequence_path)
@@ -158,13 +158,14 @@ class GarmentBuilder:
     Class to build the garment meshes from SMPL parameters.
     """
 
-    def __init__(self, mcfg: Config, garment_dict: dict):
+    def __init__(self, mcfg: Config, garment_dict: dict, garment_dict2=None):
         """
         :param mcfg: config
         :param garments_dict: dictionary with data for all garments
         """
         self.mcfg = mcfg
         self.garment_dict = garment_dict
+        self.garment_dict2 = garment_dict2
         self.vertex_builder = VertexBuilder(mcfg)
 
         self.gc = GarmentCreator(None, None, None, None, collect_lbs=False, coarse=True, verbose=False)    
@@ -186,7 +187,33 @@ class GarmentBuilder:
         sample['cloth'].target_pos = pos
         sample['cloth'].rest_pos = pos[:, 0]
         
+        # print('verts', sample['cloth'].pos.shape)
 
+        return sample
+    
+    def add_verts_nocol(self, sample: HeteroData, garment_dict: dict) -> HeteroData:
+
+        n_frames = sample['obstacle'].pos.shape[1]
+
+        if 'vertices' in garment_dict:
+            pos = garment_dict['vertices']
+        else:
+            pos = garment_dict['rest_pos']
+
+        pos = torch.FloatTensor(pos)[None,].permute(1, 0, 2)
+        pos = pos.repeat(1, n_frames, 1) # [VxNx3]
+
+        sample['cloth'].prev_pos_nocol = pos
+        sample['cloth'].pos_nocol = pos
+        sample['cloth'].target_pos_nocol = pos
+        sample['cloth'].rest_pos_nocol = pos[:, 0]
+
+        if 'stitch_verts_mask' in garment_dict:
+            stitch_verts_mask = torch.tensor(garment_dict['stitch_verts_mask']).to(pos.device)
+            sample['cloth'].stitch_verts_mask = stitch_verts_mask
+
+        # print('verts nocol', sample['cloth'].pos_nocol.shape)
+        
         return sample
 
     
@@ -520,6 +547,9 @@ class GarmentBuilder:
 
         """
         sample = self.add_verts(sample, self.garment_dict)
+        if self.garment_dict2 is not None:
+            sample = self.add_verts_nocol(sample, self.garment_dict2)
+
         sample = self.add_coarse(sample, self.garment_dict)
         sample = self.add_vertex_type(sample, self.garment_dict)
         sample = self.update_pinned_target(sample)
@@ -713,9 +743,10 @@ class Loader:
     Class for building HeteroData objects containing all data for a single sample
     """
 
-    def __init__(self, mcfg: Config, garment_dict: dict, obstacle_dict: dict, smpl_model: SMPL = None):
+    def __init__(self, mcfg: Config, garment_dict: dict, 
+                    obstacle_dict: dict, smpl_model: SMPL = None, garment_dict2=None):
 
-        self.garment_builder = GarmentBuilder(mcfg, garment_dict)
+        self.garment_builder = GarmentBuilder(mcfg, garment_dict, garment_dict2=garment_dict2)
 
         if mcfg.pose_sequence_type == 'body_model':
             self.body_builder = SMPLBodyBuilder(mcfg, smpl_model, obstacle_dict)

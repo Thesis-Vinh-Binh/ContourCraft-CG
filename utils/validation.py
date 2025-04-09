@@ -44,6 +44,15 @@ def apply_material_params(experiment_config, material_dict):
     return experiment_config
 
 
+def apply_material2_params(experiment_config, material_dict):
+    runner_name = list(experiment_config.runner.keys())[0]
+    experiment_config.runner[runner_name].material2.density_override = material_dict['density']
+    experiment_config.runner[runner_name].material2.lame_mu_override = material_dict['lame_mu']
+    experiment_config.runner[runner_name].material2.lame_lambda_override = material_dict['lame_lambda']
+    experiment_config.runner[runner_name].material2.bending_coeff_override = material_dict['bending_coeff']
+    return experiment_config
+
+
 
 
 

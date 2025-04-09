@@ -67,7 +67,9 @@ class RandomMaterial:
         lame_lambda, lame_lambda_input = self.get_lame_lambda(device, B)
         bending_coeff, bending_coeff_input = self.get_bending_coeff(device, B)
         bending_multiplier = self.mcfg.bending_multiplier
-        
+        # print('bending_multiplier', bending_multiplier)  # ###
+
+        ##### bending_multiplier is strange
         
         add_field_to_pyg_batch(sample, 'lame_mu', lame_mu, 'cloth', reference_key=None, one_per_sample=True)
         add_field_to_pyg_batch(sample, 'lame_lambda', lame_lambda, 'cloth', reference_key=None,
@@ -86,4 +88,41 @@ class RandomMaterial:
         cloth_obj.set_material(material)
         
         return sample, cloth_obj
+
+
+
+    def add_material2(self, sample):
+
+        B = sample.num_graphs
+        device = sample['cloth'].pos.device
+        
+        density = self.get_density(device, B)
+        lame_mu, lame_mu_input = self.get_lame_mu(device, B)
+        lame_lambda, lame_lambda_input = self.get_lame_lambda(device, B)
+        bending_coeff, bending_coeff_input = self.get_bending_coeff(device, B)
+        bending_multiplier = 1.0
+        
+        add_field_to_pyg_batch(sample, 'lame_mu2', lame_mu, 'cloth', reference_key=None, one_per_sample=True)
+        add_field_to_pyg_batch(sample, 'lame_lambda2', lame_lambda, 'cloth', reference_key=None,
+                               one_per_sample=True)
+        add_field_to_pyg_batch(sample, 'bending_coeff2', bending_coeff, 'cloth', reference_key=None,
+                               one_per_sample=True)
+        add_field_to_pyg_batch(sample, 'lame_mu_input2', lame_mu_input, 'cloth', reference_key=None, one_per_sample=True)
+        add_field_to_pyg_batch(sample, 'lame_lambda_input2', lame_lambda_input, 'cloth', reference_key=None,
+                               one_per_sample=True)
+        add_field_to_pyg_batch(sample, 'bending_coeff_input2', bending_coeff_input, 'cloth', reference_key=None,
+                               one_per_sample=True)
+
+        start_face_indices = torch.ones(B, device=device, dtype=torch.long) * self.mcfg.start_face_indices
+        start_vertex_indices = torch.ones(B, device=device, dtype=torch.long) * self.mcfg.start_vertex_indices
+        add_field_to_pyg_batch(sample, 'start_face_indices', start_face_indices, 'cloth', reference_key=None,
+                               one_per_sample=True)
+        add_field_to_pyg_batch(sample, 'start_vertex_indices', start_vertex_indices, 'cloth', reference_key=None,
+                                one_per_sample=True)
+        
+        material_dict = {'density': density, 'lame_mu': lame_mu, 'lame_lambda': lame_lambda,
+                            'bending_coeff': bending_coeff, 'bending_multiplier': bending_multiplier, 
+                            'start_face_indices': self.mcfg.start_face_indices}
+        
+        return sample, material_dict
     

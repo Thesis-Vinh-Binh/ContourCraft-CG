@@ -3,6 +3,7 @@ import enum
 import math
 import os
 import random
+import pickle
 
 import einops
 import numpy as np
@@ -312,6 +313,34 @@ def random_between_log(fr, to, shape, return_norm=False, device=None):
     return rand
 
 
+def nonrandom_between_log(fr, to, shape, return_norm=False, device=None):
+    """
+    Generate a random tensor with values between `fr` and `to` sampled from a log scale.
+    :param fr: minimum value
+    :param to: maximum value
+    :param shape: shape of the output tensor
+    :param return_norm: if True, return the normalized tensor (with values in [0,1]) as well
+    :param device: torch device
+    :return: a random tensor
+    """
+    rand_norm = torch.zeros(*shape) + 0.5
+    if device is not None:
+        rand_norm = rand_norm.to(device)
+
+    fr_log = math.log(fr)
+    to_log = math.log(to)
+
+    rand_log = rand_norm * (to_log - fr_log)
+    rand_log += fr_log
+
+    rand = torch.exp(rand_log)
+
+    if return_norm:
+        return rand, rand_norm
+    return rand
+
+
+
 def relative_between_log(fr, to, value: torch.Tensor):
     """
     Normalize a tensor with values between `fr` and `to` to the range [0,1] using a log scale.
@@ -426,3 +455,13 @@ class TorchTimer(object):
 
         if self.to_print:
             print(f"{self.label}: {t:.2f} ms.")
+
+
+def pickle_dump(loadout, file):
+    """
+    Dump a pickle file. Create the directory if it does not exist.
+    """
+    os.makedirs(os.path.dirname(str(file)), exist_ok=True)
+
+    with open(file, 'wb') as f:
+        pickle.dump(loadout, f)
