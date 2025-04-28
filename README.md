@@ -4,8 +4,8 @@ This repo is a refined version of the original [ContourCraft Repo](https://githu
 It has the following advantages:
 
 1. Allows simulation from arbitrary body mesh and starting pose.
-2. Add blender rendering support.
-3. Include codes to evaluate ChatGarment results on [Dress4D](https://eth-ait.github.io/4d-dress/) and [CloSE](https://github.com/anticdimi/CloSe) datasets.
+2. Adds blender rendering support.
+3. Includes codes to evaluate ChatGarment results on [Dress4D](https://eth-ait.github.io/4d-dress/) and [CloSE](https://github.com/anticdimi/CloSe) datasets.
 
 ## Installation and Preparations
 Follow [ContourCraft Repo](https://github.com/Dolorousrtur/ContourCraft) to install the environment and download data required for running ContourCraft.
