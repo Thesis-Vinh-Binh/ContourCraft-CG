@@ -72,7 +72,7 @@ def get_random_params():
 
 
 smplx_layer = SMPLXLayer(
-    '/is/cluster/fast/sbian/github/BEDLAM/data/body_models/smplx/models/smplx/SMPLX_NEUTRAL.pkl',
+    'ccraft_data/aux_data/body_models/models/smplx/SMPLX_NEUTRAL.pkl',
     ext='pkl',
     num_betas=300
 ).to(device)

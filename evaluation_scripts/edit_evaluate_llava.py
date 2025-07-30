@@ -28,7 +28,7 @@ args = argparser.parse_args()
 
 
 smplx_layer = SMPLXLayer(
-    '/is/cluster/fast/sbian/github/BEDLAM/data/body_models/smplx/models/smplx/SMPLX_NEUTRAL.pkl',
+    'ccraft_data/aux_data/body_models/models/smplx/SMPLX_NEUTRAL.pkl',
     ext='pkl',
     num_betas=300
 ).cuda()
@@ -67,7 +67,7 @@ def get_meshes_llava(path):
         mesh_dict[folder_name]['combined'] = garment_combined.cuda()
         mesh_dict[folder_name]['folder'] = img_result_dir
 
-    smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params.pkl'
+    smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params.pkl'
     with open(smplx_params_path, 'rb') as f:
         smplx_params = pickle.load(f)
     

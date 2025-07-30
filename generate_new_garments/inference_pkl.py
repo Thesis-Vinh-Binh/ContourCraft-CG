@@ -78,7 +78,7 @@ def get_all_paths_garmentcode():
     saved_folder = '/ps/scratch/ps_shared/sbian/hood_simulation_garmentcode_v4'
 
     saved_folder_final = '/ps/scratch/ps_shared/sbian/hood_simulation_garmentcode_v4'
-    sampled_clothes_list_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/sampled_clothes_v4_combine_all.pkl'
+    sampled_clothes_list_path = 'assets/aaa_mesh_registrarion/sampled_clothes_v4_combine_all.pkl'
     with open(sampled_clothes_list_path, 'rb') as f:
         sampled_clothes_list = pkl.load(f)
 
@@ -86,7 +86,7 @@ def get_all_paths_garmentcode():
 
 
 smplx_layer = SMPLXLayer(
-    '/is/cluster/fast/sbian/github/BEDLAM/data/body_models/smplx/models/smplx/SMPLX_NEUTRAL.pkl',
+    'ccraft_data/aux_data/body_models/models/smplx/SMPLX_NEUTRAL.pkl',
     ext='pkl',
     num_betas=300
 ).to(device)
@@ -153,9 +153,9 @@ if __name__ == "__main__":
         
         if body_name == 'mean_all_apart':
             motion_path = motion_path.replace('_300.npz', '_300_apart.npz')
-            rest_smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params_apart.pkl'
+            rest_smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params_apart.pkl'
         else:
-            rest_smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params.pkl'
+            rest_smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params.pkl'
         
         with open(rest_smplx_params_path, 'rb') as f:
             rest_smplx_params = pkl.load(f)
@@ -201,9 +201,9 @@ if __name__ == "__main__":
 
         if body_name == 'mean_all_apart':
             motion_path = motion_path.replace('_300.npz', '_300_apart.npz')
-            rest_smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params_apart.pkl'
+            rest_smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params_apart.pkl'
         else:
-            rest_smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params.pkl'
+            rest_smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params.pkl'
 
         with open(rest_smplx_params_path, 'rb') as f:
             rest_smplx_params = pkl.load(f)

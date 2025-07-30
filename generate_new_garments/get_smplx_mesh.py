@@ -25,7 +25,7 @@ def get_all_paths_garmentcode():
     saved_folder = '/ps/scratch/ps_shared/sbian/hood_simulation_garmentcode_v4'
 
     saved_folder_final = '/ps/scratch/ps_shared/sbian/hood_simulation_garmentcode_v4'
-    sampled_clothes_list_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/sampled_clothes_v4_combine_all.pkl'
+    sampled_clothes_list_path = 'assets/aaa_mesh_registrarion/sampled_clothes_v4_combine_all.pkl'
     with open(sampled_clothes_list_path, 'rb') as f:
         sampled_clothes_list = pkl.load(f)
 

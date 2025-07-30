@@ -1,0 +1,14 @@
+no change     /media02/ltnghia07/miniconda3/condabin/conda
+no change     /media02/ltnghia07/miniconda3/bin/conda
+no change     /media02/ltnghia07/miniconda3/bin/conda-env
+no change     /media02/ltnghia07/miniconda3/bin/activate
+no change     /media02/ltnghia07/miniconda3/bin/deactivate
+no change     /media02/ltnghia07/miniconda3/etc/profile.d/conda.sh
+no change     /media02/ltnghia07/miniconda3/etc/fish/conf.d/conda.fish
+no change     /media02/ltnghia07/miniconda3/shell/condabin/Conda.psm1
+no change     /media02/ltnghia07/miniconda3/shell/condabin/conda-hook.ps1
+no change     /media02/ltnghia07/miniconda3/lib/python3.13/site-packages/xontrib/conda.xsh
+no change     /media02/ltnghia07/miniconda3/etc/profile.d/conda.csh
+no change     /media02/ltnghia07/.bashrc
+No action taken.
+python: can't open file '/media02/ltnghia07/ContourCraft-CG/scripts/simulation_example.py': [Errno 2] No such file or directory

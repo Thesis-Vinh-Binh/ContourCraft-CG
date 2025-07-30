@@ -26,8 +26,8 @@ def run_python(index):
     return
 
 def main():
-    # sampled_clothes_list_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/sampled_clothes_v3_combine_all.pkl'
-    sampled_clothes_list_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/sampled_clothes_v4_combine_all.pkl'
+    # sampled_clothes_list_path = 'assets/aaa_mesh_registrarion/sampled_clothes_v3_combine_all.pkl'
+    sampled_clothes_list_path = 'assets/aaa_mesh_registrarion/sampled_clothes_v4_combine_all.pkl'
     with open(sampled_clothes_list_path, 'rb') as f:
         sampled_clothes_list = pkl.load(f)
 

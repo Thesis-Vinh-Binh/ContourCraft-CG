@@ -18,7 +18,7 @@ if True:
     motion_path = '/is/cluster/fast/sbian/data/bedlam_motion_for_blender/male_31_us_1190_0022_300.npz'
     lower_garment_obj = '/ps/scratch/ps_shared/sbian/hood_simulation_garmentcode_v5/0/lower_garmentcode/valid_garment_target_long_pants_wb/valid_garment_target_long_pants_wb/valid_garment_target_long_pants_wb_sim.obj'
     upper_garment_obj = '/ps/scratch/ps_shared/sbian/hood_simulation_garmentcode_v5/0/upper_garmentcode/valid_garment_longshirt/valid_garment_longshirt/valid_garment_longshirt_sim.obj'
-    rest_smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params.pkl'
+    rest_smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params.pkl'
     obj_path = os.path.join(saved_folder, 'combined_garment.obj')
     npz_path = 'exp/example_simulation/output_anypose.npz'
     

@@ -31,7 +31,7 @@ from runners.smplx.body_models import SMPLXLayer
 
 device = torch.device("cuda")
 smplx_layer = SMPLXLayer(
-    '/is/cluster/fast/sbian/github/BEDLAM/data/body_models/smplx/models/smplx/SMPLX_NEUTRAL.pkl',
+    'ccraft_data/aux_data/body_models/models/smplx/SMPLX_NEUTRAL.pkl',
     ext='pkl',
     num_betas=300
 ).to(device=device)
@@ -155,12 +155,12 @@ def main():
     all_processed_indices = all_indices
     print(all_processed_indices)
 
-    bm_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params.pkl'
+    bm_params_path = 'assets/aaa_mesh_registrarion/registered_params.pkl'
     with open(bm_params_path, 'rb') as f:
         bm_params = pkl.load(f)
     
     bm_params = {k: torch.from_numpy(v).float().cuda() for k, v in bm_params.items() if isinstance(v, np.ndarray)} 
-    bm = IO().load_mesh('/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/mean_all_1.obj', device='cuda')
+    bm = IO().load_mesh('assets/aaa_mesh_registrarion/mean_all_1.obj', device='cuda')
     smplx_joints = bm_params['joints']
     lbs_weights = smplx_layer.lbs_weights
     segmentation = lbs_weights.argmax(dim=-1)

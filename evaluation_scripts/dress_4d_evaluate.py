@@ -28,7 +28,7 @@ argparser.add_argument("--around", type=int, default=0, help="path to the save r
 args = argparser.parse_args()
 
 smplx_layer = SMPLXLayer(
-    '/is/cluster/fast/sbian/github/BEDLAM/data/body_models/smplx/models/smplx/SMPLX_NEUTRAL.pkl',
+    'ccraft_data/aux_data/body_models/models/smplx/SMPLX_NEUTRAL.pkl',
     ext='pkl',
     num_betas=300
 ).cuda()
@@ -66,7 +66,7 @@ def get_meshes_llava(path):
         mesh_dict[folder_name]['combined'] = garment_combined.cuda()
         mesh_dict[folder_name]['folder'] = img_result_dir
 
-    smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params.pkl'
+    smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params.pkl'
     with open(smplx_params_path, 'rb') as f:
         smplx_params = pickle.load(f)
     
@@ -114,7 +114,7 @@ def get_meshes_gpt4o(path):
         # print('garment_combined', garment_combined.verts_padded().max(), garment_combined.verts_padded().min())
         mesh_dict[folder_name]['folder'] = img_result_dir
 
-    smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params_garmentgenerator.pkl'
+    smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params_garmentgenerator.pkl'
     with open(smplx_params_path, 'rb') as f:
         smplx_params = pickle.load(f)
     
@@ -180,7 +180,7 @@ def get_meshes_dresscode(path):
         if not os.path.exists(mesh_dict[garment_name]['folder']):
             os.makedirs(mesh_dict[garment_name]['folder'])
 
-    smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params_garmentgenerator.pkl'
+    smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params_garmentgenerator.pkl'
     with open(smplx_params_path, 'rb') as f:
         smplx_params = pickle.load(f)
     
@@ -231,7 +231,7 @@ def get_meshes_sewformer(path):
         mesh_dict[folder_name]['combined'] = garment_combined
         mesh_dict[folder_name]['folder'] = folder_path
     
-    smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params_garmentgenerator.pkl'
+    smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params_garmentgenerator.pkl'
     with open(smplx_params_path, 'rb') as f:
         smplx_params = pickle.load(f)
     
@@ -278,7 +278,7 @@ def get_meshes_garmentrecovery(path):
         if not os.path.exists(mesh_dict[garment_name]['folder']):
             os.makedirs(mesh_dict[garment_name]['folder'])
 
-    smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params_garmentgenerator_cloth3d.pkl'
+    smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params_garmentgenerator_cloth3d.pkl'
     with open(smplx_params_path, 'rb') as f:
         smplx_params = pickle.load(f)
     
@@ -294,11 +294,11 @@ def convert_garments(pred_garment_mesh, img_name, smplx_params_raw, saved_folder
     print('Start converting garments', img_name)
     img_name = img_name.split('.')[0]
     ID, place, seq = img_name.split('__')
-    pkl_folder = f'/is/cluster/fast/scratch/sbian/Dress4D/{ID}/{place}/{seq}/Semantic/clothes/'
+    pkl_folder = f'/media02/ltnghia07/Dress4D/{ID}/{place}/{seq}/Semantic/clothes/'
     all_pkl_files = os.listdir(pkl_folder)
     all_pkl_files = sorted([item for item in all_pkl_files if item.endswith('.pkl')])
     pkl_path = os.path.join(pkl_folder, all_pkl_files[0])
-    # pkl_path = f'/is/cluster/fast/scratch/sbian/Dress4D/{ID}/{place}/{seq}/Semantic/clothes/cloth-f00011.pkl'
+    # pkl_path = f'/media02/ltnghia07/Dress4D/{ID}/{place}/{seq}/Semantic/clothes/cloth-f00011.pkl'
     frameid = all_pkl_files[0].split('-')[1].split('.')[0]
 
     with open(pkl_path, 'rb') as f:
@@ -321,7 +321,7 @@ def convert_garments(pred_garment_mesh, img_name, smplx_params_raw, saved_folder
     
     gt_garment_mesh = join_meshes_as_scene(meshes)
     
-    smplx_params_new_path = f'/is/cluster/fast/scratch/sbian/Dress4D/{ID}/{place}/{seq}/SMPLX/mesh-{frameid}_smplx.pkl'
+    smplx_params_new_path = f'/media02/ltnghia07/Dress4D/{ID}/{place}/{seq}/SMPLX/mesh-{frameid}_smplx.pkl'
     with open(smplx_params_new_path, 'rb') as f:
         smplx_params_new = pickle.load(f)
     
@@ -386,7 +386,7 @@ def run_python(garmentpath, garmentpath2=None, saved_folder='', inverse=0):
 
 def convert_garments_Apose(pred_garment_mesh, img_name, smplx_params_raw, inp_path):
     print('Start converting garments', img_name)
-    smplx_params_path = '/is/cluster/fast/sbian/github/GET3D/exp/aaa_mesh_registrarion/registered_params.pkl'
+    smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params.pkl'
     with open(smplx_params_path, 'rb') as f:
         smplx_params = pickle.load(f)
     
@@ -428,11 +428,11 @@ def fscore_func(dist1, dist2, threshold=0.001):
 def calculate_fscore(pred_garment_mesh, img_name, smplx_params_raw, saved_folder=''):
     img_name = img_name.split('.')[0]
     ID, place, seq = img_name.split('__')
-    pkl_folder = f'/is/cluster/fast/scratch/sbian/Dress4D/{ID}/{place}/{seq}/Semantic/clothes/'
+    pkl_folder = f'/media02/ltnghia07/Dress4D/{ID}/{place}/{seq}/Semantic/clothes/'
     all_pkl_files = os.listdir(pkl_folder)
     all_pkl_files = sorted([item for item in all_pkl_files if item.endswith('.pkl')])
     pkl_path = os.path.join(pkl_folder, all_pkl_files[0])
-    # pkl_path = f'/is/cluster/fast/scratch/sbian/Dress4D/{ID}/{place}/{seq}/Semantic/clothes/cloth-f00011.pkl'
+    # pkl_path = f'/media02/ltnghia07/Dress4D/{ID}/{place}/{seq}/Semantic/clothes/cloth-f00011.pkl'
     frameid = all_pkl_files[0].split('-')[1].split('.')[0]
 
     with open(pkl_path, 'rb') as f:
