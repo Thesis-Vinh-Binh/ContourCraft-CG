@@ -22,4 +22,4 @@ DEFAULTS['hostname'] = hostname
 DEFAULTS = munchify(DEFAULTS)
 
 DEFAULTS['project_dir'] = '/workspace/ContourCraft-CG/'
-DEFAULTS['data_root'] = '/workspace/ContourCraft-CG/ccraft_data/ccraft_data/'
+DEFAULTS['data_root'] = '/workspace/ContourCraft-CG/ccraft_data/'
