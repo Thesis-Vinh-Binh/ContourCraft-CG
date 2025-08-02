@@ -15,7 +15,7 @@ conda init
 source ~/.bashrc
 
 
-conda create -n ccraft python=3.10
+conda create -n ccraft python=3.10 -y
 conda activate ccraft
 
 export REPO_DIR=$(pwd)
@@ -62,12 +62,17 @@ apt update && apt install -y libsm6 libxext6 libegl1 libx11-6 libxrandr2 libxine
 
 cd $REPO_DIR
 export PYTHONPATH=$(pwd)
-python simulation_example.py 
+# python simulation_example.py 
+
+cd /workspace
+wget https://ftp.halifax.rwth-aachen.de/blender/release/Blender3.6/blender-3.6.14-linux-x64.tar.xz 
+tar -xf blender-3.6.14-linux-x64.tar.xz
+rm blender-3.6.14-linux-x64.tar.xz
 
 wget https://github.com/Meshcapade/SMPL_blender_addon/archive/refs/heads/main.zip -O smplx_addon.zip
 unzip smplx_addon.zip
 mv SMPL_blender_addon-main/ /workspace/blender-3.6.14-linux-x64/3.6/scripts/addons/smplx_blender_addon
 cp -r /workspace/blender-3.6.14-linux-x64/3.6/scripts/addons/smplx_blender_addon /venv/ccraft/lib/python3.10/site-packages/bpy/3.6/scripts/addons
 
-/workspace/blender-3.6.14-linux-x64/3.6/python/bin/python3.10 -m ensurepip
-/workspace/blender-3.6.14-linux-x64/3.6/python/bin/python3.10 -m pip install pyyaml tqdm
+# /workspace/blender-3.6.14-linux-x64/3.6/python/bin/python3.10 -m ensurepip
+# /workspace/blender-3.6.14-linux-x64/3.6/python/bin/python3.10 -m pip install pyyaml tqdm

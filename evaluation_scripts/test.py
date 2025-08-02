@@ -40,8 +40,8 @@ BLENDER_PATH = '/workspace/blender-3.6.14-linux-x64/blender'
 CLOSE_DATA_PATH = '/workspace/CloSe/assets/close-di'
 SIMULATED_PATH = '/workspace/GarmentCodeRC/data'
 
-# with open(PKL_PATH, 'rb') as f:
-#     smplx_data = pickle.load(f)
+with open(PKL_PATH, 'rb') as f:
+    smplx_data = pickle.load(f)
 
 
 def rotate_pose(pose, angle, which_axis='x'):
@@ -68,10 +68,9 @@ def get_meshes_llava(path):
     args.path = path
     all_folders = os.listdir(os.path.join(path, 'vis_new'))
     all_folders = [item for item in all_folders if os.path.isdir(os.path.join(path, 'vis_new', item))]
-    all_folders = all_folders
     mesh_dict = {}
     path_dict = {}
-    for folder in tqdm(all_folders, dynamic_ncols=True): 
+    for folder in tqdm(all_folders, dynamic_ncols=True):
         folder_name = folder[len('valid_garment_'):]
         mesh_dict[folder_name] = {}
         path_dict[folder_name] = {}
@@ -403,35 +402,6 @@ def get_meshes_llava(path):
 #     return mesh_dict, path_dict, smplx_dict
 
 
-def convert_smpl_to_smplx(smpl_betas, smpl_pose, smpl_trans):
-    # Betas: pad to 16 if needed
-    if smpl_betas.shape[0] < 16:
-        smplx_betas = np.pad(smpl_betas, (0, 16 - smpl_betas.shape[0]), 'constant')
-    else:
-        smplx_betas = smpl_betas
-
-    # Pose conversion
-    global_orient = smpl_pose[:3]                  # (3,)
-    body_pose = smpl_pose[3:66]                    # (63,) → 21 joints
-
-    # Build full 165-D SMPL-X pose vector
-    full_pose = np.concatenate([
-        global_orient,                              # (3,)
-        body_pose,                                  # (63,)
-        np.zeros(45),                               # left_hand_pose (15 joints × 3)
-        np.zeros(45),                               # right_hand_pose (15 joints × 3)
-        np.zeros(3),                                # jaw_pose
-        np.zeros(6)                                 # eye_pose (2 eyes × 3)
-    ])                                              # => total (165,)
-
-    smplx_params = {
-        'betas': smplx_betas,
-        'poses': full_pose,
-        'expression': np.zeros(10),                 # expression blendshapes
-        'trans': smpl_trans
-    }
-
-    return smplx_params
 
 
 def convert_garments(pred_garment_mesh, img_name, smplx_params_raw, saved_folder=''):
@@ -443,7 +413,7 @@ def convert_garments(pred_garment_mesh, img_name, smplx_params_raw, saved_folder
     )
     target_npz = np.load(target_npz_path)
 
-    smplx_params = convert_smpl_to_smplx(target_npz['betas'], target_npz['pose'], target_npz['trans'])
+    smplx_params = smplx_data[garnment_id]
     gt_points_upper, gt_points_lower, gt_points_wholebody, gt_points = get_seged_points(target_npz)
     gt_points = gt_points / target_npz['scale']
     print('scale', target_npz['scale'])
@@ -459,7 +429,7 @@ def convert_garments(pred_garment_mesh, img_name, smplx_params_raw, saved_folder
 
     smplx_params_new = {
         'betas': torch.tensor(betas, dtype=torch.float32).reshape(1, 300).cuda(),
-        'poses': torch.tensor(smplx_params['poses'], dtype=torch.float32).reshape(1, 55, 3).cuda(), 
+        'poses': torch.tensor(smplx_params['poses'], dtype=torch.float32).reshape(1, 55, 3).cuda(),
         'transl': torch.tensor(smplx_params['trans'], dtype=torch.float32).reshape(1, 3).cuda(),
     }
 
@@ -620,7 +590,7 @@ if __name__ == '__main__':
     # elif args.method == 'garmentrecovery':
     #     mesh_dict, path_dict, smplx_dict = get_meshes_garmentrecovery_pose(args.path)
 
-    if not args.is_Apose and not args.is_fscore: 
+    if not args.is_Apose and not args.is_fscore:
         summary_dict = {}
         print(len(mesh_dict))
         # assert False
