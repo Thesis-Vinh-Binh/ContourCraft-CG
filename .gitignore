@@ -1,4 +1,5 @@
 /ccraft_data/*
+evaluation/*/vis_new/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -8,6 +9,7 @@ logs/*
 
 # C extensions
 *.so
+*.zip
 
 # Distribution / packaging
 .Python

@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=setup_CG
-#SBATCH --nodes=1
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4               # more threads may assist loading
-#SBATCH --mem=32G                       # host RAM for data processing
-#SBATCH --gres=gpu:1
-#SBATCH --time=48:00:00
-#SBATCH --output=logs/setup_%j.out  # %j is the job ID
-#SBATCH --error=logs/setup_%j.out   # (optional) separate stderr
+# #SBATCH --job-name=setup_CG
+# #SBATCH --nodes=1
+# #SBATCH --ntasks=1
+# #SBATCH --cpus-per-task=4               # more threads may assist loading
+# #SBATCH --mem=32G                       # host RAM for data processing
+# #SBATCH --gres=gpu:1
+# #SBATCH --time=48:00:00
+# #SBATCH --output=logs/setup_%j.out  # %j is the job ID
+# #SBATCH --error=logs/setup_%j.out   # (optional) separate stderr
 
 # module purge
 # module load anaconda3/2023.9
@@ -16,7 +16,13 @@ source ~/.bashrc
 
 
 conda create -n ccraft python=3.10 -y
+source /opt/miniforge3/etc/profile.d/conda.sh
 conda activate ccraft
+echo "Current conda env: $CONDA_DEFAULT_ENV"
+if [ "$CONDA_DEFAULT_ENV" != "/venv/ccraft" ]; then
+    echo "Current conda env is not /venv/ccraft, please activate it"
+    exit 1
+fi
 
 export REPO_DIR=$(pwd)
 export FORCE_CUDA=1
@@ -38,13 +44,19 @@ pip install cudf-cu12 torch-geometric==2.4.0 smplx trimesh easydict
 pip install pyg-library torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.4.0+cu124.html
 pip install cugraph-cu12 --extra-index-url=https://pypi.nvidia.com
 pip install gdown 
+
+cd /workspace/ContourCraft-CG
 gdown 1QXezA3J6uXqWHGATmcw3jaYxRXY2Ctte 
 unzip assets.zip
 gdown 1NfxAeaC2va8TWMjiO_gbAcVPnZ8BYFPD
 unzip ccraft_data.zip
 cd ccraft_data/aux_data/body_models
+rm assets.zip ccraft_data.zip
+
+cd /workspace
 gdown 1Ooo9IWcHdTKzlDSk-CiRz5oSTrlCeutV
 unzip models_smplx_v1_1.zip
+rm models_smplx_v1_1.zip
 
 cd $REPO_DIR
 
@@ -73,6 +85,3 @@ wget https://github.com/Meshcapade/SMPL_blender_addon/archive/refs/heads/main.zi
 unzip smplx_addon.zip
 mv SMPL_blender_addon-main/ /workspace/blender-3.6.14-linux-x64/3.6/scripts/addons/smplx_blender_addon
 cp -r /workspace/blender-3.6.14-linux-x64/3.6/scripts/addons/smplx_blender_addon /venv/ccraft/lib/python3.10/site-packages/bpy/3.6/scripts/addons
-
-# /workspace/blender-3.6.14-linux-x64/3.6/python/bin/python3.10 -m ensurepip
-# /workspace/blender-3.6.14-linux-x64/3.6/python/bin/python3.10 -m pip install pyyaml tqdm
