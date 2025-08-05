@@ -50,10 +50,8 @@ gdown 1QXezA3J6uXqWHGATmcw3jaYxRXY2Ctte
 unzip assets.zip
 gdown 1NfxAeaC2va8TWMjiO_gbAcVPnZ8BYFPD
 unzip ccraft_data.zip
-cd ccraft_data/aux_data/body_models
 rm assets.zip ccraft_data.zip
-
-cd /workspace
+cd ccraft_data/aux_data/body_models
 gdown 1Ooo9IWcHdTKzlDSk-CiRz5oSTrlCeutV
 unzip models_smplx_v1_1.zip
 rm models_smplx_v1_1.zip

@@ -1,5 +1,8 @@
 /ccraft_data/*
 evaluation/*/vis_new/
+evaluation/*/*/
+
+all_json_spec_files.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

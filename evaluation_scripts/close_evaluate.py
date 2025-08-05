@@ -114,6 +114,37 @@ def get_meshes_llava(path):
     }
     return mesh_dict, path_dict, smplx_dict
 
+def get_meshes_d2g(path):
+    path = os.path.join(EVALUATION_DATA_PATH, path)
+    args.folder = path
+    all_folders = os.listdir(path)
+    all_folders = [item for item in all_folders if os.path.isdir(os.path.join(path, item))]
+    all_folders = all_folders
+    mesh_dict = {}
+    path_dict = {}
+    for folder in tqdm(all_folders, dynamic_ncols=True): 
+        folder_name = folder
+        mesh_dict[folder_name] = {}
+        path_dict[folder_name] = {}
+        img_result_dir = os.path.join(path, folder)
+        # subfolder is the first folder in the img_result_dir
+        subfolder = os.listdir(img_result_dir)[0]
+        garment_path = os.path.join(img_result_dir, subfolder, f'{subfolder}_sim.obj')
+        mesh = IO().load_mesh(garment_path, load_textures=False)
+        mesh_dict[folder_name]['combined'] = mesh.cuda()
+        mesh_dict[folder_name]['folder'] = img_result_dir
+
+    smplx_params_path = 'assets/aaa_mesh_registrarion/registered_params.pkl'
+    with open(smplx_params_path, 'rb') as f:
+        smplx_params = pickle.load(f)
+    
+    smplx_dict = {
+        'betas': torch.tensor(smplx_params['pred_shape'], dtype=torch.float32).reshape(1, 300).cuda(),
+        'poses': torch.tensor(smplx_params['pred_pose'], dtype=torch.float32).reshape(1, 165).cuda(),
+        'transl': torch.tensor(smplx_params['pred_transl'], dtype=torch.float32).reshape(1, 3).cuda(),
+    }
+    return mesh_dict, path_dict, smplx_dict
+
 
 def convert_smpl_to_smplx(smpl_betas, smpl_pose, smpl_trans):
     # Betas: pad to 16 if needed
@@ -294,6 +325,7 @@ def export_to_pkl(summary_dict, output_path, file_name):
 def calculate_and_return_cd(mesh_dict, smplx_dict, folder_name):
     summary_dict = {}
     chamfer_dist_all = []
+    failed = []
     for img_name, pred_garment_mesh_dict in mesh_dict.items():
         if 'smplx' in pred_garment_mesh_dict:
             smplx_dict = pred_garment_mesh_dict['smplx']
@@ -301,13 +333,14 @@ def calculate_and_return_cd(mesh_dict, smplx_dict, folder_name):
             pred_garment_mesh_dict['combined'].cuda(), img_name, smplx_dict, saved_folder=pred_garment_mesh_dict['folder'])
 
         if chamfer_dist > 200:
+            failed.append(img_name)
             continue
 
         summary_dict[img_name] = chamfer_dist
         chamfer_dist_all.append(chamfer_dist)
         
     export_to_pkl(summary_dict, folder_name, 'summary_dict')
-    return chamfer_dist_all, summary_dict
+    return chamfer_dist_all, summary_dict, failed
 
 def calculate_and_return_fscore(mesh_dict, smplx_dict, folder_name, summary_dict = None):
     fscore_dict = {}
@@ -325,6 +358,14 @@ def calculate_and_return_fscore(mesh_dict, smplx_dict, folder_name, summary_dict
     export_to_pkl(fscore_dict, folder_name, 'fscore_dict')
     return fscore_dist_all, fscore_dict
 
+def get_meshes(folder, method):
+    if method == 'llava':
+        return get_meshes_llava(folder)
+    elif method == 'd2g':
+        return get_meshes_d2g(folder)
+    else:
+        raise ValueError(f'Method {method} not supported')
+
 if __name__ == '__main__':
     args = argument_parser()
     output = {}
@@ -332,7 +373,7 @@ if __name__ == '__main__':
     print('args values', args.folder, args.method, args.metrics, args.use_cache)
     if not args.use_cache:
         print('not using cache')
-        mesh_dict, path_dict, smplx_dict = get_meshes_llava(args.folder)
+        mesh_dict, path_dict, smplx_dict = get_meshes(args.folder, args.method)
         
     directory = os.path.join(EVALUATION_DATA_PATH, args.folder)
 
@@ -344,9 +385,8 @@ if __name__ == '__main__':
         else:
             if mesh_dict is None:
                 print('prepare for chamfer')
-                assert False
-                mesh_dict, path_dict, smplx_dict = get_meshes_llava(args.folder)
-            chamfer_dist_all, summary_dict = calculate_and_return_cd(mesh_dict, smplx_dict, directory)
+                mesh_dict, path_dict, smplx_dict = get_meshes(args.folder, args.method)
+            chamfer_dist_all, summary_dict, failed = calculate_and_return_cd(mesh_dict, smplx_dict, directory)
             
         output['chamfer'] = {
             'mean': torch.tensor(chamfer_dist_all).mean().item(),
@@ -354,7 +394,9 @@ if __name__ == '__main__':
             'median': torch.tensor(chamfer_dist_all).median().item(),
             'min': torch.tensor(chamfer_dist_all).min().item(),
             'max': torch.tensor(chamfer_dist_all).max().item(),
+            'failed_count': len(failed),
         }
+        output['failed'] = failed
     
     if 'fscore' in args.metrics:
         if os.path.exists(os.path.join(directory, 'fscore_dict.pkl')) and args.use_cache:
@@ -390,6 +432,12 @@ if __name__ == '__main__':
         
     for metric in args.metrics:
         content[metric] = output[metric]
+        
+    if 'chamfer' in args.metrics:
+        content['failed'] = {
+            'total': len(output['failed']),
+            'list': output['failed'],
+        }
     
     with open(os.path.join(directory, 'summary_dict.json'), 'w') as f:
         json.dump(content, f, indent=4, sort_keys=True)
