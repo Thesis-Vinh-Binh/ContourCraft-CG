@@ -211,7 +211,7 @@ def convert_garments(pred_garment_mesh, img_name, smplx_params_raw, saved_folder
     )
 
     deformed_garment_mesh = Meshes(verts=[deformed_garment_verts], faces=[pred_garment_mesh.faces_packed()])
-    pred_points = sample_points_from_meshes(deformed_garment_mesh, len(gt_points[0]))
+    0 = sample_points_from_meshes(deformed_garment_mesh, len(gt_points[0]))
     # gt_points = gt_points_wholebody.unsqueeze(0)
 
     print('pred_points', pred_points.shape, pred_points.mean(dim=1))
@@ -229,7 +229,7 @@ def convert_garments(pred_garment_mesh, img_name, smplx_params_raw, saved_folder
 
 
 
-def fscore_func(dist1, dist2, threshold=0.01):
+def fscore_func(dist1, dist2, threshold=0.001):
     """
     Calculates the F-score between two point clouds with the corresponding threshold value.
     :param dist1: Batch, N-Points
